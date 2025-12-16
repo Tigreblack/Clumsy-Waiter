@@ -7,15 +7,15 @@ public class PlatePhysMechanic : MonoBehaviour
 
     // variables public et private
     public float torqueForce = 10f; // force du plateau
-    private float timer = 0f;
-    public float angularDamping = 0;
-    public float axisinc = 0;
+    private float timer = 0f; // le timer essentielles à la mécnaique du plateau.
+    public float angularDamping = 0; // Damping du plateau
+    public float axisinc = 0; // Ne pas modifier cette valeur c'est le trackeur d'angle, pour modifier utilsier angleZ qui est une variable plus bas.
 
     // les listes
     Transform[] liste_plate;
     List<Transform> liste_emp;
 
-    // emplacement des objets pour plus tard 
+    // emplacement des objets pour réaliser d'eventuelle chose pour plus tard.
     Transform emp_0 = null;
     Transform emp_1 = null;
     Transform emp_2 = null;
@@ -23,9 +23,12 @@ public class PlatePhysMechanic : MonoBehaviour
     Transform emp_4 = null;
 
     // Object var
-    GameObject plate = null;
-    public Rigidbody rb;
+    GameObject plate = null; // Le plateau
+    public Rigidbody rb; // RigidBody
 
+    // Win_Defeat Initialisation et Utilisation du script.
+    GameObject GameManager = null;
+    private Win_Defeat win_Defeat0;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,6 +38,8 @@ public class PlatePhysMechanic : MonoBehaviour
         string prefix1 = "emp";
 
         plate = GameObject.Find("Plate_V1");
+        GameManager = GameObject.Find("GameManager");
+        win_Defeat0 = GameManager.GetComponent<Win_Defeat>();
 
         // Hinge Limits Fixée
 
@@ -73,7 +78,7 @@ public class PlatePhysMechanic : MonoBehaviour
             // color rouge
             t.GetComponent<Renderer>().material.color = Color.red;
 
-            // GET les emplacements (assignation)
+            // GET les emplacements (assignation) / Switch CASE.
 
             for (int i = 0; i <= 4; i++)
             {
@@ -108,7 +113,7 @@ public class PlatePhysMechanic : MonoBehaviour
 
         if (timer >= 1f)
         {
-            int rand = Random.Range(0,3); // diificultée bascule
+            int rand = Random.Range(0,3);  // diificultée bascule
 
             // condition 1
             if (rand == 2)
@@ -123,11 +128,23 @@ public class PlatePhysMechanic : MonoBehaviour
                 timer = 0f; // reset timer
         }
 
+        // Win_Defeat Condition
 
-        
-        //plate.transform.localEulerAngles.z = 
+        if(angleZ <= -30 || angleZ >= 30) // Condition de défaite
+        {
 
-        
+            // Pour éviter les erreurs not Found
+            if (win_Defeat0 != null && win_Defeat0.Get_victory_status() != 3) 
+            {
+                win_Defeat0.Set_victory_status(2);
+            }
+        } 
+
+        else  // Une condition supplémentaire si jamais ya quelque chose de prévu.
+        {
+
+
+        }      
     }
 
 
@@ -147,6 +164,9 @@ public class PlatePhysMechanic : MonoBehaviour
         {
             rb.AddRelativeTorque(new Vector3(0f, 0f, 5));
         }
+
+
+        // de l'ancien code au chaos
 
         //rb.AddTorque(Vector3.left * horizontal * torqueForce * Time.deltaTime);
         //rb.AddTorque(Vector3.right * vertical * torqueForce * Time.deltaTime);
