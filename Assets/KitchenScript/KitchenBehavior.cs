@@ -1,47 +1,89 @@
+using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class KitchenBehavior : MonoBehaviour
 {
-    public List<int> ListeAttente;
-    public Button BoutonAjoutRecette;
-
-    class Recette
+    [System.Serializable]
+    public class Recette
     {
         public string Name;
-        public string TempsPreparation;
-        public string Priorite;
-        public string Etat;
+        public float TempsPreparation; // en secondes (durée totale)
+        public float RemainingTime; // temps restant (se met à jour lors de la préparation)
 
-        public Recette(string name, string tempsPreparation, string priorite, string etat)
+        public Recette(string name, float tempsPreparation)
         {
             Name = name;
             TempsPreparation = tempsPreparation;
-            Priorite = priorite;
-            Etat = etat;
+            RemainingTime = tempsPreparation;
         }
     }
-    // Pour faire une nouvelle recette => Recette nomDeLaRecette = new Recette("...","...","...");
 
-    public void AjouterListeAttente()
+    // File d'attente visible dans l'inspector
+    public List<Recette> ListeAttente = new List<Recette>();
+
+    // flag pour savoir si la cuisine est en train de traiter
+    private bool isProcessing = false;
+
+    // Ajoute une recette à la file d'attente et lance le traitement si nécessaire
+    public void AjouterRecetteQueue(string nom, float tempsEnSecondes)
     {
-        // Revoir, surment pas bonne méthode ==> lag à la fin de l'execution
-        Recette Recette1 = new Recette("Name", "TempsPreparation", "Priorite","Etat");
-        List<Recette> ListeAttente = new List<Recette>();
-        ListeAttente.Add(Recette1);
-        if(ListeAttente.Count > 0) 
-            Debug.Log("Ajout à la liste d'attente");
+        var r = new Recette(nom, tempsEnSecondes);
+        ListeAttente.Add(r);
+        UpdateQueueUI();
+
+        if (!isProcessing)
+            StartCoroutine(CuisineCoroutine());
     }
 
-    public void Cuisine()
+    // Coroutine qui traite la file d'attente séquentiellement
+    private IEnumerator CuisineCoroutine()
     {
+        isProcessing = true;
 
+        while (ListeAttente.Count > 0)
+        {
+            Recette current = ListeAttente[0];
+
+            // décrémente RemainingTime pour la recette en cours
+            while (current.RemainingTime > 0f)
+            {
+                current.RemainingTime -= Time.deltaTime;
+                if (current.RemainingTime < 0f) current.RemainingTime = 0f;
+                UpdateQueueUI();
+                yield return null;
+            }
+
+            ListeAttente.RemoveAt(0);
+            UpdateQueueUI();
+
+            yield return null;
+        }
+
+        isProcessing = false;
     }
 
-    void Update()
+    // Méthode publique pour obtenir l'état formaté de la file (ordre + temps restant)
+    public string GetQueueStatusString()
     {
-        BoutonAjoutRecette.onClick.AddListener(AjouterListeAttente);
+        if (ListeAttente.Count == 0)
+            return "File d'attente : (vide)";
+
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.AppendLine("File d'attente :");
+        for (int i = 0; i < ListeAttente.Count; i++)
+        {
+            var r = ListeAttente[i];
+            sb.AppendLine($"{i + 1}. {r.Name} - {r.RemainingTime:0.#}s restantes");
+        }
+
+        return sb.ToString();
+    }
+
+    // Méthode interne : prévue pour mise à jour UI si besoin.
+    // Actuellement vide car l'affichage est géré par AfficherUI_CarnetRecette.
+    private void UpdateQueueUI()
+    {
+        // Intentionnellement vide — pas de log ni affichage direct ici.
     }
 }
